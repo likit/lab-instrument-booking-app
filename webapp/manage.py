@@ -22,15 +22,16 @@ def test():
 @manager.command
 def initdb():
     """Init the database"""
-    # password = generate_password_hash('testpass')
-    # customer = {
-    #         'name': 'Foo',
-    #         'lastname': 'Jiang',
-    #         'email': 'foo@example.com',
-    #         'password': password,
-    #         'org': None,
-    #         'new_org': None,
-    #         }
+    mongo.db.drop_collection('users')
+    password = generate_password_hash('testpass')
+    user = {
+            'name': 'Foo',
+            'lastname': 'Jiang',
+            'email': 'foo@example.com',
+            'password': password,
+            'pi_email': 'gao@example.com',
+            'status': 'undergrad',
+            }
     # password = generate_password_hash('testpass')
     # admin = {
     #         'email': 'admin@example.com',
@@ -38,8 +39,7 @@ def initdb():
     #         }
 
     # mongo.db.admins.insert(admin, safe=True)
-    # mongo.db.customers.insert(customer, safe=True)
-    pass
+    mongo.db.users.insert(user, safe=True)
 
 
 manager.add_command('shell', Shell(make_context=make_shell_context))

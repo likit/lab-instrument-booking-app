@@ -9,10 +9,16 @@ MUMT: Online Lab Booking
 {% endblock %}
 
 {% block navbar %}
-<div class="navbar" role="navigation">
-    <div class="container">
+<div class="navbar navbar-default" role="navigation">
+    <div class="container-fluid">
         <div class="navbar-header">
             <a class="navbar-brand" href="/">Home</a>
+            <a class="navbar-brand" href="/auth/logout">Log out</a>
+            {% if current_user.is_authenticated() %}
+                <p class="navbar-text navbar-right">Signed in with {{ current_user.email }}</p>
+            {% else %}
+                <p class="navbar-text navbar-right">Not signed in</p>
+            {% endif %}
         </div>
     </div>
 </div>
