@@ -6,3 +6,7 @@ from . import main
 @login_required
 def index():
     return render_template('index.html')
+
+@login_required
+def calendar():
+    return render_template('calendar.html')
