@@ -4,7 +4,8 @@ from . import mongo
 from . import login_manager
 
 class User():
-    def __init__(self, email):
+    def __init__(self, email, name):
+        self.name = name
         self.email = email
 
     def is_active(self):
@@ -36,4 +37,4 @@ def load_user(email):
         # else:
         #     return Customer(admin['email'])
     else:
-        return User(user['email'])
+        return User(user['email'], user['name'])

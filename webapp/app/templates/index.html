@@ -11,10 +11,19 @@
 <script src={{ url_for('static', filename="fullcalendar/fullcalendar.min.js") }}></script>
 <script type="text/javascript">
 $(document).ready(function() {
+    /// create a dialog message for event info
+    var info_dialog = $("#event-info").dialog({
+        model: true,
+        buttons: {
+            Ok: function() {
+                $(this).dialog("close");
+            }
+        }
+    })
     /// create a form dialog for adding new event
-    dialog = $("#event-form").dialog({
+    var dialog = $("#event-form").dialog({
             autoOpen: false,
-            height: 400,
+            height: 300,
             width: 350,
             modal: true,
             buttons: {
@@ -25,6 +34,7 @@ $(document).ready(function() {
             },
         });
 
+    {# $("#event-start").selectmenu(); #}
     form = dialog.find( "form" ).on( "submit", function( event ) {
       event.preventDefault();
       add_event();
@@ -32,17 +42,13 @@ $(document).ready(function() {
 
     function add_event() {
         var event_data;
-        var event_title = $("#event-title");
-        console.log('Title: ' + event_title)
-        if(event_title) {
-            event_data = {
-                title: $("#event-title").val(),
-                start: $("#event-start").val(),
-                end: $("#event-end").val(),
-            };
-        console.log(event_data);
-            $('#calendar').fullCalendar('renderEvent', event_data, true);
-        }
+        var event_title = "{{ current_user.name }}";
+        event_data = {
+            title: event_title,
+            start: $("#event-start").text(),
+            end: $("#event-end").val(),
+        };
+        $('#calendar').fullCalendar('renderEvent', event_data, true);
         dialog.dialog("close");
     }
 
@@ -51,34 +57,37 @@ $(document).ready(function() {
                 left: 'prev,next,today',
                 center: 'title',
                 right: 'month,agendaWeek,agendaDay'
-        },
-        defaultDate: '2015-06-26',
+            },
+        minTime: "06:00:00",
+        maxTime: "24:00:00",
+        axisFormat: "H:mm",
+        slotDuration: "01:00:00",
         selectable: true,
         selectHelper: true,
-        select: function(start, end) {
-            $("#event-start").val(start);
-            $("#event-end").val(end);
-            dialog.dialog("open");
-            $('#calendar').fullCalendar('unselect');
-        },
         editable: true,
         eventLimit: true,
+        eventOverlap: false,
         eventClick: function(calEvent, jsEvent, view) {
-            dialog.dialog("open");
-        },
-        events: [
-                {
-                    title: 'All day evnet',
-                   start: '2005-02-01'
-                },
-                {
-                    title: 'Long event',
-                    start: '2015-02-07',
-                    end: '2015-02-10'
+            $("#event-title-info").text(calEvent.title);
+            $("#event-date-info").text(calEvent.start.format("dd, DD MMM YYYY"));
+            $("#event-start-info").text(calEvent.start.format("H:mm"));
+            $("#event-end-info").text(calEvent.end.format("H:mm"));
+            info_dialog.dialog("open");
+            },
+        defaultDate: $("#calendar").fullCalendar('today'),
+        dayClick: function(date, jsEvent, view) {
+                var curr_view = $("#calendar").fullCalendar("getView").name;
+                if (curr_view  === "month") {
+                    $("#calendar").fullCalendar('gotoDate', date);
+                    $("#calendar").fullCalendar('changeView', 'agendaDay');
+                } else if (curr_view === "agendaDay") {
+                    var event_start = date;
+                    $("#event-start").text(event_start.format("H:mm"));
+                    $("#event-end").val(event_start.add(1, 'h'));
+                    dialog.dialog("open");
                 }
-            ]
-    });
-
+            },
+        });
 });
 </script>
 {% endblock %}
@@ -101,16 +110,38 @@ $(document).ready(function() {
 <div id="event-form" title="Create new event">
     <form>
         <fieldset>
-            <label for="event-title">Title</label>
-            <input type="text" id="event-title" name="title"
-                class="text ui-widget-content ui-corner-all"></input>
-            <label for="event-start">Start</label>
-            <input type="text" id="event-start" name="start"
-                class="text ui-widget-content ui-corner-all"></input>
-            <label for="event-end">End</label>
+            <p>For: {{ current_user.name }}</p>
+            <p>From: <span id="event-start"></span></p>
+            {# <select id="event-start" name="start" style="width:200px"> #}
+            {#     <option>6:00</option> #}
+            {#     <option>7:00</option> #}
+            {#     <option selected="selected">8:00</option> #}
+            {#     <option>9:00</option> #}
+            {#     <option>10:00</option> #}
+            {# </select> #}
+            <label for="event-end">To:</label>
             <input type="text" id="event-end" name="end"
                 class="text ui-widget-content ui-corner-all"></input>
-            <input type="submit">
+                <input type="submit" tabindex=-1 style="position:absolute; top:-1000px">
+        </fieldset>
+    </form>
+</div>
+<div id="event-info" title="Reservation Information">
+    <span class="ui-icon ui-icon-circle-check" style="float:left; margin:0 7px 50px 0;"></span>
+    <table>
+        <tr><td>By: </td><td><span id="event-title-info"></span></td></tr>
+        <tr><td>Date: </td><td><span id="event-date-info"></span></td></tr>
+        <tr><td>From: </td><td><span id="event-start-info"></span></td></tr>
+        <tr><td>To: </td><td><span id="event-end-info"></span></td></tr>
+        <tr><td>Email: </td><td><span id="event-email-info"></span></td></tr>
+        <tr><td>Mobile: </td><td><span id="event-mobile-info"></span></td></tr>
+    </table>
+</div>
+<div id="message-area">
+    <h2>Please leave a comment below</h2>
+    <form>
+        <fieldset>
+            <textarea></textarea>
         </fieldset>
     </form>
 </div>
