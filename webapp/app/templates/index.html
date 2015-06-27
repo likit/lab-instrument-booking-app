@@ -7,56 +7,111 @@
 {{ super() }}
 <script src={{ url_for('static', filename="fullcalendar/lib/moment.min.js") }}></script>
 <script src={{ url_for('static', filename="fullcalendar/lib/jquery.min.js") }}></script>
+<script src={{ url_for('static', filename="fullcalendar/lib/jquery-ui.min.js") }}></script>
 <script src={{ url_for('static', filename="fullcalendar/fullcalendar.min.js") }}></script>
 <script type="text/javascript">
 $(document).ready(function() {
-        $('#calendar').fullCalendar({
-            header: {
-                    left: 'prev,next,today',
-                    center: 'title',
-                    right: 'month,agendaWeek,agendaDay'
-            },
-            defaultDate: '2015-06-26',
-            selectable: true,
-            selectHelper: true,
-            select: function(start, end) {
-                var title = prompt('Event Title');
-                var eventData;
-                if(title) {
-                    eventData = {
-                        title: title,
-                        start: start,
-                        end: end
-                    };
-                    $('#calendar').fullCalendar('renderEvent', eventData, true);
+    /// create a form dialog for adding new event
+    dialog = $("#event-form").dialog({
+            autoOpen: false,
+            height: 400,
+            width: 350,
+            modal: true,
+            buttons: {
+                "Create a new event": add_event,
+                Cancel: function() {
+                    dialog.dialog("close");
                 }
-                $('#calendar').fullCalendar('unselect');
             },
-            editable: true,
-            eventLimit: true,
-            events: [
-                    {
-                        title: 'All day evnet',
-                       start: '2005-02-01'
-                    },
-                    {
-                        title: 'Long event',
-                        start: '2015-02-07',
-                        end: '2015-02-10'
-                    }
-                ]
+        });
+
+    form = dialog.find( "form" ).on( "submit", function( event ) {
+      event.preventDefault();
+      add_event();
     });
+
+    function add_event() {
+        var event_data;
+        var event_title = $("#event-title");
+        console.log('Title: ' + event_title)
+        if(event_title) {
+            event_data = {
+                title: $("#event-title").val(),
+                start: $("#event-start").val(),
+                end: $("#event-end").val(),
+            };
+        console.log(event_data);
+            $('#calendar').fullCalendar('renderEvent', event_data, true);
+        }
+        dialog.dialog("close");
+    }
+
+    $('#calendar').fullCalendar({
+        header: {
+                left: 'prev,next,today',
+                center: 'title',
+                right: 'month,agendaWeek,agendaDay'
+        },
+        defaultDate: '2015-06-26',
+        selectable: true,
+        selectHelper: true,
+        select: function(start, end) {
+            $("#event-start").val(start);
+            $("#event-end").val(end);
+            dialog.dialog("open");
+            $('#calendar').fullCalendar('unselect');
+        },
+        editable: true,
+        eventLimit: true,
+        eventClick: function(calEvent, jsEvent, view) {
+            dialog.dialog("open");
+        },
+        events: [
+                {
+                    title: 'All day evnet',
+                   start: '2005-02-01'
+                },
+                {
+                    title: 'Long event',
+                    start: '2015-02-07',
+                    end: '2015-02-10'
+                }
+            ]
+    });
+
 });
 </script>
 {% endblock %}
 
 {% block styles %}
 {{ super() }}
+<link href={{ url_for("static", filename="fullcalendar/lib/jquery-ui.min.css") }} rel='stylesheet' />
 <link href={{ url_for("static", filename="fullcalendar/fullcalendar.min.css") }} rel='stylesheet' />
 <link href={{ url_for("static", filename="fullcalendar/fullcalendar.print.css") }} rel='stylesheet' media='print' />
+<style>
+    label, input { display:block; }
+    input.text { margin-bottom:12px; width:95%; padding: .4em; }
+    fieldset { padding:0; border:0; margin-top:25px; }
+</style>
 {% endblock %}
 
 {% block page_content %}
 <h1>Welcome to Lab Booking System</h1>
 <div id="calendar"></div>
+<div id="event-form" title="Create new event">
+    <form>
+        <fieldset>
+            <label for="event-title">Title</label>
+            <input type="text" id="event-title" name="title"
+                class="text ui-widget-content ui-corner-all"></input>
+            <label for="event-start">Start</label>
+            <input type="text" id="event-start" name="start"
+                class="text ui-widget-content ui-corner-all"></input>
+            <label for="event-end">End</label>
+            <input type="text" id="event-end" name="end"
+                class="text ui-widget-content ui-corner-all"></input>
+            <input type="submit">
+        </fieldset>
+    </form>
+</div>
 {% endblock %}
