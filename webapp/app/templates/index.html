@@ -10,6 +10,9 @@
 <script src={{ url_for('static', filename="fullcalendar/lib/jquery-ui.min.js") }}></script>
 <script src={{ url_for('static', filename="fullcalendar/fullcalendar.min.js") }}></script>
 <script type="text/javascript">
+    $SCRIPT_ROOT = {{ request.script_root|tojson|safe }};
+</script>
+<script type="text/javascript">
 $(document).ready(function() {
     /// create a dialog message for event info
     var info_dialog = $("#event-info").dialog({
@@ -20,6 +23,9 @@ $(document).ready(function() {
             }
         }
     })
+
+    var event_data; // let it be a global variable for the time being
+
     /// create a form dialog for adding new event
     var dialog = $("#event-form").dialog({
             autoOpen: false,
@@ -27,7 +33,7 @@ $(document).ready(function() {
             width: 350,
             modal: true,
             buttons: {
-                "Create a new event": add_event,
+                "Book": add_event,
                 Cancel: function() {
                     dialog.dialog("close");
                 }
@@ -41,15 +47,19 @@ $(document).ready(function() {
     });
 
     function add_event() {
-        var event_data;
-        var event_title = "{{ current_user.name }}";
-        event_data = {
-            title: event_title,
-            start: $("#event-start").text(),
-            end: $("#event-end").val(),
-        };
-        $('#calendar').fullCalendar('renderEvent', event_data, true);
-        dialog.dialog("close");
+        console.log("Trying to add an event...");
+        console.log(event_data);
+        $.getJSON($SCRIPT_ROOT + '/verify_booking',
+                event_data,
+                function(data) {
+                if (data['valid'] === "overlap") {
+                    $("#valid-status").text("Overlapped period.");
+                } else {
+                    $('#calendar').fullCalendar('renderEvent', event_data, true);
+                    dialog.dialog("close");
+                }
+            });
+
     }
 
     $('#calendar').fullCalendar({
@@ -67,23 +77,32 @@ $(document).ready(function() {
         editable: true,
         eventLimit: true,
         eventOverlap: false,
+        events: [],
         eventClick: function(calEvent, jsEvent, view) {
             $("#event-title-info").text(calEvent.title);
             $("#event-date-info").text(calEvent.start.format("dd, DD MMM YYYY"));
-            $("#event-start-info").text(calEvent.start.format("H:mm"));
-            $("#event-end-info").text(calEvent.end.format("H:mm"));
+            $("#event-start-info").text(calEvent.start.format("HH:mm"));
+            $("#event-end-info").text(calEvent.end.format("HH:mm"));
+            $("#event-email-info").text(calEvent.email);
             info_dialog.dialog("open");
             },
         defaultDate: $("#calendar").fullCalendar('today'),
         dayClick: function(date, jsEvent, view) {
                 var curr_view = $("#calendar").fullCalendar("getView").name;
+                var start = moment(date).format('YYYY-MM-DDTHH:mm');
+                var end = moment(date).add(1, 'h').format('YYYY-MM-DDTHH:mm');
                 if (curr_view  === "month") {
                     $("#calendar").fullCalendar('gotoDate', date);
                     $("#calendar").fullCalendar('changeView', 'agendaDay');
                 } else if (curr_view === "agendaDay") {
-                    var event_start = date;
-                    $("#event-start").text(event_start.format("H:mm"));
-                    $("#event-end").val(event_start.add(1, 'h'));
+                    event_data = {
+                        title : "{{ current_user.name }}",
+                        start: start,
+                        end: end,
+                        email: "{{ current_user.email }}",
+                    }
+                    $("#event-start").text(start);
+                    $("#event-end").val(end);
                     dialog.dialog("open");
                 }
             },
@@ -110,6 +129,7 @@ $(document).ready(function() {
 <div id="event-form" title="Create new event">
     <form>
         <fieldset>
+            <p><span id="valid-status"></span></p>
             <p>For: {{ current_user.name }}</p>
             <p>From: <span id="event-start"></span></p>
             {# <select id="event-start" name="start" style="width:200px"> #}

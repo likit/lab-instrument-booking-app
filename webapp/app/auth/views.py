@@ -20,7 +20,7 @@ def login():
         user = mongo.db.users.find_one({'email': form.email.data})
         if user is not None and check_password_hash(user['password'],
                 form.password.data):
-            login_user(User(user['email']), form.remember_me.data)
+            login_user(User(user['email'], user['name']), form.remember_me.data)
             return redirect(request.args.get('next')
                     or url_for('main.index'))
         flash('Invalid email or password')
